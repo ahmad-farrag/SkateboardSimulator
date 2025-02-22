@@ -4,15 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "SkateboardSimulatorGameMode.generated.h"
+#include "SkaterGameMode.generated.h"
 
 UCLASS(minimalapi)
-class ASkateboardSimulatorGameMode : public AGameModeBase
+class ASkaterGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 
 public:
-	ASkateboardSimulatorGameMode();
+	ASkaterGameMode();
 };
 
 
