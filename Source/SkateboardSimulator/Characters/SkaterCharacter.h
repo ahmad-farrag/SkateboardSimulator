@@ -57,9 +57,10 @@ public:
 	
 	/** For acceleration  */
 
-	/** The target speed the character will accelerate or decelerate towards. */
+
+	/** Default Speed when not accelerating or decelerating*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-	float TargetSpeed;
+	float DefaultSpeed;
 
 	/** The rate at which the character accelerates to reach the target speed. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
@@ -114,5 +115,6 @@ private:
 	void UpdateDeceleration();
 	bool bIsSlowingDown = false; // Tracks if slowdown is active
 	bool bIsSpeedingUp = false; // Tracks if SpeedUp is active
+	float TargetSpeed; //The target speed the character will accelerate or decelerate towards.
 };
 

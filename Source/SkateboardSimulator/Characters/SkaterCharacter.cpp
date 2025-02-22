@@ -49,7 +49,8 @@ ASkaterCharacter::ASkaterCharacter()
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
 	// Set default movement parameters
-	TargetSpeed = 500.f;       // Default movement speed
+	DefaultSpeed = 500.f; // Default movement speed
+	TargetSpeed = DefaultSpeed;
 	AccelerationRate = 4.f;  // Speed gain per second
 	DecelerationRate = 10.f;  // Speed loss per second
 
@@ -115,17 +116,17 @@ void ASkaterCharacter::Move(const FInputActionValue& Value)
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
 		// Reset speed if SlowDown is NOT active and TargetSpeed is less than 500
-		if (!bIsSlowingDown && TargetSpeed < 500.f)
+		if (!bIsSlowingDown && TargetSpeed < DefaultSpeed)
 		{
-			TargetSpeed = 500.f;
+			TargetSpeed = DefaultSpeed;
 			GetCharacterMovement()->MaxWalkSpeed = TargetSpeed;
 			GetWorldTimerManager().SetTimer(DecelerationTimerHandle, this, &ASkaterCharacter::UpdateDeceleration, 0.02f, true);
 		}
 
 		// Reset speed if neither SlowDown nor SpeedUp is active and TargetSpeed is different from 500
-		if (!bIsSlowingDown && !bIsSpeedingUp && TargetSpeed != 500.f)
+		if (!bIsSlowingDown && !bIsSpeedingUp && TargetSpeed != DefaultSpeed)
 		{
-			TargetSpeed = 500.f;
+			TargetSpeed = DefaultSpeed;
 			GetWorldTimerManager().SetTimer(DecelerationTimerHandle, this, &ASkaterCharacter::UpdateDeceleration, 0.02f, true);
 		}
 
@@ -149,7 +150,7 @@ void ASkaterCharacter::SpeedUp()
 	bIsSpeedingUp = true;  // Mark SpeedUp as active
 
 	const float MaxAllowedSpeed = 1500.f;
-	TargetSpeed = FMath::Clamp(TargetSpeed * 1.5f, 500.f, MaxAllowedSpeed);
+	TargetSpeed = FMath::Clamp(TargetSpeed * 1.5f, DefaultSpeed, MaxAllowedSpeed);
 
 	// Start acceleration timer
 	GetWorldTimerManager().SetTimer(AccelerationTimerHandle, this, &ASkaterCharacter::UpdateAcceleration, 0.02f, true);
@@ -160,7 +161,7 @@ void ASkaterCharacter::SlowDown()
 	bIsSlowingDown = true;  // Mark SlowDown as active
 
 	const float MinAllowedSpeed = 200.f;
-	TargetSpeed = FMath::Clamp(TargetSpeed * 0.6f, MinAllowedSpeed, 500.f);
+	TargetSpeed = FMath::Clamp(TargetSpeed * 0.6f, MinAllowedSpeed, DefaultSpeed);
 
 	// Start deceleration timer
 	GetWorldTimerManager().SetTimer(DecelerationTimerHandle, this, &ASkaterCharacter::UpdateDeceleration, 0.02f, true);
@@ -170,7 +171,7 @@ void ASkaterCharacter::ResetSpeed()
 {
 	if (!bIsSpeedingUp && !bIsSlowingDown)
 	{
-		TargetSpeed = 500.f;
+		TargetSpeed = DefaultSpeed;
 		GetCharacterMovement()->MaxWalkSpeed = TargetSpeed;
 
 		if (GetCharacterMovement()->Velocity.Size() > 0)
