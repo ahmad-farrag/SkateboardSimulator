@@ -32,7 +32,7 @@ ASkaterCharacter::ASkaterCharacter()
 	// instead of recompiling to adjust them
 	GetCharacterMovement()->JumpZVelocity = 700.f;
 	GetCharacterMovement()->AirControl = 0.35f;
-	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	//GetCharacterMovement()->MaxWalkSpeed = 500.f;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
@@ -47,6 +47,14 @@ ASkaterCharacter::ASkaterCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+
+	// Set default movement parameters
+	TargetSpeed = 500.f;       // Default movement speed
+	AccelerationRate = 4.f;  // Speed gain per second
+	DecelerationRate = 10.f;  // Speed loss per second
+
+	// Apply the initial speed to character movement
+	GetCharacterMovement()->MaxWalkSpeed = TargetSpeed;
 }
 
 void ASkaterCharacter::BeginPlay()
@@ -63,6 +71,7 @@ void ASkaterCharacter::BeginPlay()
 		}
 	}
 }
+
 
 //////////////////////////////////////////////////////////////////////////
 // Input
@@ -105,30 +114,24 @@ void ASkaterCharacter::Move(const FInputActionValue& Value)
 		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-		// Apply slowdown only when moving backward
+		// Reset speed if SlowDown is NOT active and TargetSpeed is less than 500
+		if (!bIsSlowingDown && TargetSpeed < 500.f)
+		{
+			TargetSpeed = 500.f;
+			GetCharacterMovement()->MaxWalkSpeed = TargetSpeed;
+			GetWorldTimerManager().SetTimer(DecelerationTimerHandle, this, &ASkaterCharacter::UpdateDeceleration, 0.02f, true);
+		}
+
+		// Reset speed if neither SlowDown nor SpeedUp is active and TargetSpeed is different from 500
+		if (!bIsSlowingDown && !bIsSpeedingUp && TargetSpeed != 500.f)
+		{
+			TargetSpeed = 500.f;
+			GetWorldTimerManager().SetTimer(DecelerationTimerHandle, this, &ASkaterCharacter::UpdateDeceleration, 0.02f, true);
+		}
+
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
 	}
-}
-
-void ASkaterCharacter::SpeedUp()
-{
-	const float MaxAllowedSpeed = 1500.f;
-	GetCharacterMovement()->MaxWalkSpeed = FMath::Clamp(GetCharacterMovement()->MaxWalkSpeed * 1.5f, 500.f, MaxAllowedSpeed);
-}
-
-void ASkaterCharacter::SlowDown()
-{
-	{
-		const float DecelerationRate = 0.4f; // Reduce speed dynamically
-		const float MinAllowedSpeed = 200.f; // Prevent slowing down too much
-		GetCharacterMovement()->MaxWalkSpeed = FMath::Clamp(GetCharacterMovement()->MaxWalkSpeed * DecelerationRate, MinAllowedSpeed, 500.f);
-	}
-}
-
-void ASkaterCharacter::ResetSpeed()
-{
-	GetCharacterMovement()->MaxWalkSpeed = 500.f;
 }
 
 void ASkaterCharacter::Look(const FInputActionValue& Value)
@@ -140,3 +143,82 @@ void ASkaterCharacter::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
 }
+
+void ASkaterCharacter::SpeedUp()
+{
+	bIsSpeedingUp = true;  // Mark SpeedUp as active
+
+	const float MaxAllowedSpeed = 1500.f;
+	TargetSpeed = FMath::Clamp(TargetSpeed * 1.5f, 500.f, MaxAllowedSpeed);
+
+	// Start acceleration timer
+	GetWorldTimerManager().SetTimer(AccelerationTimerHandle, this, &ASkaterCharacter::UpdateAcceleration, 0.02f, true);
+}
+
+void ASkaterCharacter::SlowDown()
+{
+	bIsSlowingDown = true;  // Mark SlowDown as active
+
+	const float MinAllowedSpeed = 200.f;
+	TargetSpeed = FMath::Clamp(TargetSpeed * 0.6f, MinAllowedSpeed, 500.f);
+
+	// Start deceleration timer
+	GetWorldTimerManager().SetTimer(DecelerationTimerHandle, this, &ASkaterCharacter::UpdateDeceleration, 0.02f, true);
+}
+
+void ASkaterCharacter::ResetSpeed()
+{
+	if (!bIsSpeedingUp && !bIsSlowingDown)
+	{
+		TargetSpeed = 500.f;
+		GetCharacterMovement()->MaxWalkSpeed = TargetSpeed;
+
+		if (GetCharacterMovement()->Velocity.Size() > 0)
+		{
+			GetWorldTimerManager().SetTimer(DecelerationTimerHandle, this, &ASkaterCharacter::UpdateDeceleration, 0.02f, true);
+		}
+		else
+		{
+			GetWorldTimerManager().ClearTimer(DecelerationTimerHandle);
+		}
+	}
+
+	bIsSpeedingUp = false;
+	bIsSlowingDown = false;
+}
+
+void ASkaterCharacter::UpdateAcceleration()
+{
+	float CurrentSpeed = GetCharacterMovement()->MaxWalkSpeed;
+
+	// If speed is lower than the target speed, increase it
+	if (CurrentSpeed < TargetSpeed)
+	{
+		float NewSpeed = FMath::FInterpTo(CurrentSpeed, TargetSpeed, GetWorld()->GetDeltaSeconds(), AccelerationRate);
+		GetCharacterMovement()->MaxWalkSpeed = NewSpeed;
+	}
+	else
+	{
+		// Stop the acceleration timer if the target speed is reached
+		GetWorldTimerManager().ClearTimer(AccelerationTimerHandle);
+	}
+}
+
+void ASkaterCharacter::UpdateDeceleration()
+{
+	float CurrentSpeed = GetCharacterMovement()->MaxWalkSpeed;
+
+	// If speed is higher than the target speed, decrease it
+	if (CurrentSpeed > TargetSpeed)
+	{
+		float NewSpeed = FMath::FInterpTo(CurrentSpeed, TargetSpeed, GetWorld()->GetDeltaSeconds(), DecelerationRate);
+		GetCharacterMovement()->MaxWalkSpeed = NewSpeed;
+	}
+	else
+	{
+		// Stop the deceleration timer if target speed is reached
+		GetWorldTimerManager().ClearTimer(DecelerationTimerHandle);
+	}
+}
+
+

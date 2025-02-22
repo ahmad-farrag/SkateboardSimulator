@@ -55,6 +55,19 @@ class ASkaterCharacter : public ACharacter
 public:
 	ASkaterCharacter();
 	
+	/** For acceleration  */
+
+	/** The target speed the character will accelerate or decelerate towards. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float TargetSpeed;
+
+	/** The rate at which the character accelerates to reach the target speed. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float AccelerationRate;
+
+	/** The rate at which the character decelerates when slowing down. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float DecelerationRate;
 
 protected:
 
@@ -92,5 +105,14 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+private:
+	FTimerHandle AccelerationTimerHandle;
+	FTimerHandle DecelerationTimerHandle;
+
+	void UpdateAcceleration();
+	void UpdateDeceleration();
+	bool bIsSlowingDown = false; // Tracks if slowdown is active
+	bool bIsSpeedingUp = false; // Tracks if SpeedUp is active
 };
 
