@@ -44,6 +44,14 @@ class ASkaterCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LookAction;
 
+	/** Speed Up Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* SpeedUpAction;
+	
+	/** Slow Down Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* SlowDownAction;
+
 public:
 	ASkaterCharacter();
 	
@@ -52,6 +60,21 @@ protected:
 
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
+
+	/**
+	 * Increases the character's movement speed, simulating a speed boost.
+	 * Clamps the max speed to prevent excessive acceleration.
+	 */
+	void SpeedUp();
+
+	/**
+	 * Reduces the character's movement speed when moving backward.
+	 * Simulates slowing down when pressing the opposite direction.
+	 */
+	void SlowDown();
+
+	/** Resets the character's movement speed to the default value. */
+	void ResetSpeed();
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
