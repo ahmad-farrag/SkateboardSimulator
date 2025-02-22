@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
+#include "SkateboardSimulator/Obstacles/SkaterInterface.h"
 #include "SkaterCharacter.generated.h"
 
 class USpringArmComponent;
@@ -13,10 +14,8 @@ class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
 
-DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
-
 UCLASS(config=Game)
-class ASkaterCharacter : public ACharacter
+class ASkaterCharacter : public ACharacter, public ISkaterInterface
 {
 	GENERATED_BODY()
 
@@ -116,5 +115,8 @@ private:
 	bool bIsSlowingDown = false; // Tracks if slowdown is active
 	bool bIsSpeedingUp = false; // Tracks if SpeedUp is active
 	float TargetSpeed; //The target speed the character will accelerate or decelerate towards.
+
+public:
+	virtual bool CanBeCountedForScore() const override { return true; }
 };
 
