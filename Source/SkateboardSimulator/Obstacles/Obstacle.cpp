@@ -49,6 +49,7 @@ void AObstacle::OnGameOverTriggerEnter(UPrimitiveComponent* OverlappedComp,
     if (IScoreInterface* ScoreSystem = Cast<IScoreInterface>(GameMode))
     {
         ScoreSystem->OnGameOver();
+        SkaterRef = nullptr;
     }
 }
 
