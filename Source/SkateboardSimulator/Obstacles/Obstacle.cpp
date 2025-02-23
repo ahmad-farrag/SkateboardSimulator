@@ -40,7 +40,11 @@ void AObstacle::OnGameOverTriggerEnter(UPrimitiveComponent* OverlappedComp,
     bool bFromSweep, const FHitResult& SweepResult)
 {
     AGameModeBase* GameMode = UGameplayStatics::GetGameMode(GetWorld());
-    if (!GameMode) return; // Ensure GameMode is valid before proceeding
+
+    if (!ensureMsgf(GameMode, TEXT("GameMode is null in AObstacle::OnGameOverTriggerEnter! Ensure the correct GameMode is assigned in the level.")))
+    {
+        return;
+    }
 
     if (IScoreInterface* ScoreSystem = Cast<IScoreInterface>(GameMode))
     {
@@ -70,7 +74,11 @@ void AObstacle::OnScoreTriggerExit(UPrimitiveComponent* OverlappedComp,
     if (SkaterRef && OtherActor == SkaterRef)
     {
         AGameModeBase* GameMode = UGameplayStatics::GetGameMode(GetWorld());
-        if (!GameMode) return;
+
+        if (!ensureMsgf(GameMode, TEXT("GameMode is null in AObstacle::OnGameOverTriggerEnter! Ensure the correct GameMode is assigned in the level.")))
+        {
+            return;
+        }
 
         if (IScoreInterface* ScoreSystem = Cast<IScoreInterface>(GameMode))
         {
