@@ -9,6 +9,9 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "DrawDebugHelpers.h"
+
 
 //////////////////////////////////////////////////////////////////////////
 // ASkaterCharacter
@@ -55,6 +58,11 @@ ASkaterCharacter::ASkaterCharacter()
 
 	// Apply the initial speed to character movement
 	GetCharacterMovement()->MaxWalkSpeed = TargetSpeed;
+
+	//SkateBoardRotation
+	SkateboardMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SkateboardMesh"));
+	SkateboardMesh->SetupAttachment(RootComponent);
+	SkateboardMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void ASkaterCharacter::BeginPlay()
@@ -72,6 +80,11 @@ void ASkaterCharacter::BeginPlay()
 	}
 }
 
+void ASkaterCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	UpdateSkateboardRotation();
+}
 
 //////////////////////////////////////////////////////////////////////////
 // Input
@@ -221,4 +234,53 @@ void ASkaterCharacter::UpdateDeceleration()
 	}
 }
 
+
+//SkateBoard Rotation
+FVector ASkaterCharacter::GetGroundLocation(const FVector& SocketLocation) const
+{
+	FVector TraceStart = SocketLocation;
+	FVector TraceEnd = SocketLocation - FVector(0, 0, 100); // Trace downward
+	FHitResult HitResult;
+
+	FCollisionQueryParams TraceParams;
+	TraceParams.AddIgnoredActor(this);
+
+	bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_Visibility, TraceParams);
+
+	// Debugging
+	FColor LineColor = bHit ? FColor::Green : FColor::Red;
+	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, LineColor, false, 1.0f, 0, 2.0f);
+	DrawDebugPoint(GetWorld(), bHit ? HitResult.ImpactPoint : TraceEnd, 5.0f, LineColor, false, 1.0f);
+
+	return bHit ? HitResult.ImpactPoint : SocketLocation;
+}
+
+void ASkaterCharacter::UpdateSkateboardRotation()
+{
+	if (!SkateboardMesh)
+		return;
+
+	// Get socket locations
+	FVector FrontSocketLocation = SkateboardMesh->GetSocketLocation("Front");
+	FVector BackSocketLocation = SkateboardMesh->GetSocketLocation("Back");
+
+	// Get ground locations
+	FVector FrontGroundLocation = GetGroundLocation(FrontSocketLocation);
+	FVector BackGroundLocation = GetGroundLocation(BackSocketLocation);
+
+	// Compute Look-At rotation but only modify pitch
+	FRotator TargetRotation = UKismetMathLibrary::FindLookAtRotation(BackGroundLocation, FrontGroundLocation);
+
+	// Get current rotation
+	FRotator CurrentRotation = SkateboardMesh->GetComponentRotation();
+
+	// Only modify pitch (up and down rotation) properly
+	float NewPitch = FMath::FInterpTo(CurrentRotation.Pitch, TargetRotation.Pitch, GetWorld()->GetDeltaSeconds(), 30.f);
+
+	FRotator NewRotation = CurrentRotation;
+	NewRotation.Pitch = NewPitch;
+
+	// Apply the new rotation
+	SkateboardMesh->SetWorldRotation(NewRotation);
+}
 

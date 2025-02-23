@@ -51,6 +51,9 @@ class ASkaterCharacter : public ACharacter, public ISkaterInterface
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* SlowDownAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UStaticMeshComponent* SkateboardMesh;
+
 public:
 	ASkaterCharacter();
 	
@@ -100,6 +103,8 @@ protected:
 	// To add mapping context
 	virtual void BeginPlay();
 
+	virtual void Tick(float DeltaTime);
+
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
@@ -116,6 +121,9 @@ private:
 	bool bIsSpeedingUp = false; // Tracks if SpeedUp is active
 	float TargetSpeed; //The target speed the character will accelerate or decelerate towards.
 
+	//Skateboard Rotation
+	FVector GetGroundLocation(const FVector& SocketLocation) const;
+	void UpdateSkateboardRotation();
 public:
 	virtual bool CanBeCountedForScore() const override { return true; }
 };
