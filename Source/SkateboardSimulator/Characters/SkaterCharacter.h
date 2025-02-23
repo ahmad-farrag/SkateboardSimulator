@@ -129,5 +129,7 @@ public:
 	virtual bool CanBeCountedForScore() const override { return true; }
 
 	virtual void GetLegLocationsForSkateboard_Implementation(FVector& OutFrontLegLocation, FVector& OutBackLegLocation) const override;
+
+	virtual UCharacterMovementComponent* GetSkaterMovementComponent_Implementation() const override;
 };
 

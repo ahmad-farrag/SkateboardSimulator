@@ -18,4 +18,8 @@ public:
     /** This ensures the function can be called in both C++ and Blueprint */
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "SkaterCharacterInterface")
     void GetLegLocationsForSkateboard(FVector& OutFrontLegLocation, FVector& OutBackLegLocation) const;
+
+    /** Retrieve the skater's movement component. */
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "SkaterCharacterInterface")
+    UCharacterMovementComponent* GetSkaterMovementComponent() const;
 };

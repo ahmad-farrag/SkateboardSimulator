@@ -10,7 +10,6 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "DrawDebugHelpers.h"
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -247,11 +246,6 @@ FVector ASkaterCharacter::GetGroundLocation(const FVector& SocketLocation) const
 
 	bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_Visibility, TraceParams);
 
-	// Debugging
-	FColor LineColor = bHit ? FColor::Green : FColor::Red;
-	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, LineColor, false, 1.0f, 0, 2.0f);
-	DrawDebugPoint(GetWorld(), bHit ? HitResult.ImpactPoint : TraceEnd, 5.0f, LineColor, false, 1.0f);
-
 	return bHit ? HitResult.ImpactPoint : SocketLocation;
 }
 
@@ -295,4 +289,9 @@ void ASkaterCharacter::GetLegLocationsForSkateboard_Implementation(FVector& OutF
 
 	OutFrontLegLocation = SkateboardMesh->GetSocketLocation("LegFront");
 	OutBackLegLocation = SkateboardMesh->GetSocketLocation("LegBack");
+}
+
+UCharacterMovementComponent* ASkaterCharacter::GetSkaterMovementComponent_Implementation() const
+{
+	return GetCharacterMovement();
 }
