@@ -284,3 +284,15 @@ void ASkaterCharacter::UpdateSkateboardRotation()
 	SkateboardMesh->SetWorldRotation(NewRotation);
 }
 
+void ASkaterCharacter::GetLegLocationsForSkateboard_Implementation(FVector& OutFrontLegLocation, FVector& OutBackLegLocation) const
+{
+	if (!SkateboardMesh)
+	{
+		OutFrontLegLocation = FVector::ZeroVector;
+		OutBackLegLocation = FVector::ZeroVector;
+		return;
+	}
+
+	OutFrontLegLocation = SkateboardMesh->GetSocketLocation("LegFront");
+	OutBackLegLocation = SkateboardMesh->GetSocketLocation("LegBack");
+}

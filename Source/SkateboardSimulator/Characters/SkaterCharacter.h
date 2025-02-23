@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
 #include "SkateboardSimulator/Obstacles/SkaterInterface.h"
+#include "SkaterCharacterInterface.h"
 #include "SkaterCharacter.generated.h"
 
 class USpringArmComponent;
@@ -15,7 +16,7 @@ class UInputAction;
 struct FInputActionValue;
 
 UCLASS(config=Game)
-class ASkaterCharacter : public ACharacter, public ISkaterInterface
+class ASkaterCharacter : public ACharacter, public ISkaterInterface, public ISkaterCharacterInterface
 {
 	GENERATED_BODY()
 
@@ -126,5 +127,7 @@ private:
 	void UpdateSkateboardRotation();
 public:
 	virtual bool CanBeCountedForScore() const override { return true; }
+
+	virtual void GetLegLocationsForSkateboard_Implementation(FVector& OutFrontLegLocation, FVector& OutBackLegLocation) const override;
 };
 
