@@ -5,10 +5,14 @@
 #include "SkaterInterface.h"
 #include "GameFramework/GameModeBase.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/SceneComponent.h"
 
 AObstacle::AObstacle()
 {
     PrimaryActorTick.bCanEverTick = false;
+
+    // Initialize Root Component
+    RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 
     GameOverTrigger = CreateDefaultSubobject<UBoxComponent>(TEXT("GameOverTrigger"));
     GameOverTrigger->SetupAttachment(RootComponent);
@@ -36,13 +40,11 @@ void AObstacle::OnGameOverTriggerEnter(UPrimitiveComponent* OverlappedComp,
     bool bFromSweep, const FHitResult& SweepResult)
 {
     AGameModeBase* GameMode = UGameplayStatics::GetGameMode(GetWorld());
-    if (GameMode && UKismetSystemLibrary::DoesImplementInterface(Cast<UObject>(GameMode), UScoreInterface::StaticClass()))
+    if (!GameMode) return; // Ensure GameMode is valid before proceeding
+
+    if (IScoreInterface* ScoreSystem = Cast<IScoreInterface>(GameMode))
     {
-        IScoreInterface* ScoreSystem = Cast<IScoreInterface>(GameMode);
-        if (ScoreSystem)
-        {
-            ScoreSystem->OnGameOver();
-        }
+        ScoreSystem->OnGameOver();
     }
 }
 
@@ -50,9 +52,10 @@ void AObstacle::OnScoreTriggerEnter(UPrimitiveComponent* OverlappedComp, AActor*
     UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
     bool bFromSweep, const FHitResult& SweepResult)
 {
-    if (ISkaterInterface* Skater = Cast<ISkaterInterface>(OtherActor))
+    if (OtherActor && OtherActor->Implements<USkaterInterface>())
     {
-        if (Skater->CanBeCountedForScore())
+        ISkaterInterface* Skater = Cast<ISkaterInterface>(OtherActor);
+        if (Skater && Skater->CanBeCountedForScore())
         {
             SkaterRef = OtherActor;
         }
@@ -64,22 +67,16 @@ void AObstacle::OnScoreTriggerExit(UPrimitiveComponent* OverlappedComp,
     UPrimitiveComponent* OtherComp,
     int32 OtherBodyIndex)
 {
-    if (OtherActor == SkaterRef)
+    if (SkaterRef && OtherActor == SkaterRef)
     {
         AGameModeBase* GameMode = UGameplayStatics::GetGameMode(GetWorld());
-        if (GameMode && UKismetSystemLibrary::DoesImplementInterface(Cast<UObject>(GameMode), UScoreInterface::StaticClass()))
+        if (!GameMode) return;
+
+        if (IScoreInterface* ScoreSystem = Cast<IScoreInterface>(GameMode))
         {
-            IScoreInterface* ScoreSystem = Cast<IScoreInterface>(GameMode);
-            if (ScoreSystem)
-            {
-                ScoreSystem->OnPlayerScored(10);
-            }
+            ScoreSystem->OnPlayerScored(10);
         }
 
         SkaterRef = nullptr;
     }
 }
-
-
-
-
